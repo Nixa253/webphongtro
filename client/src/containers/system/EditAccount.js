@@ -1,39 +1,48 @@
-import React, { useState } from "react"
-import anonavatar from "../../assets/anonavatar.png"
-import { SystemInputReadOnly, SystemInputFormV2, ButtonEdit } from '../../components'
-import { useSelector, useDispatch } from 'react-redux'
-import { apiUpdateUser } from '../../services'
-import { fileToBase64, blobToBase64 } from "../../ultils/Common/tobase64"
-import { getCurrent } from "../../store/actions"
-import Swal from "sweetalert2"
-const EditAccount = () => {
-    const { currentData } = useSelector(state => state.user)
-    const dispatch = useDispatch()
+import React, { useState } from "react";
+import anonavatar from "../../assets/anonavatar.png";
+import { SystemInputReadOnly, SystemInputFormV2, ButtonEdit } from '../../components';
+import { useSelector, useDispatch } from 'react-redux';
+import { apiUpdateUser } from '../../services';
+import { fileToBase64 } from "../../ultils/Common/tobase64";
+import { getCurrent } from "../../store/actions";
+import Swal from "sweetalert2";
+
+// Decorator xử lý upload file và cập nhật avatar
+const withAvatarUpload = (WrappedComponent) => {
+    return (props) => {
+        const [avatar, setAvatar] = useState(props.avatar || '');
+
+        const handleUploadFile = async (e) => {
+            const imageBase64 = await fileToBase64(e.target.files[0]);
+            setAvatar(imageBase64);
+        };
+
+        return <WrappedComponent {...props} avatar={avatar} setAvatar={setAvatar} handleUploadFile={handleUploadFile} />;
+    };
+};
+
+const EditAccount = ({ avatar, setAvatar, handleUploadFile }) => {
+    const { currentData } = useSelector(state => state.user);
+    const dispatch = useDispatch();
     const [payload, setPayload] = useState({
         name: currentData?.name || '',
-        avatar: blobToBase64(currentData?.avatar) || '',
         fbUrl: currentData?.fbUrl || '',
         zalo: currentData?.zalo || ''
-    })
+    });
+
     const handleSubmit = async () => {
-        const response = await apiUpdateUser(payload)
+        // Nếu avatar thay đổi, cập nhật avatar trong payload
+        const payloadToUpdate = avatar ? { ...payload, avatar: avatar } : payload;
+        const response = await apiUpdateUser(payloadToUpdate);
         if (response?.data.err === 0) {
             Swal.fire('Done', 'Chỉnh sửa thành công', 'success').then(() => {
-                dispatch(getCurrent())
-            })
+                dispatch(getCurrent());
+            });
         }
         else {
-            Swal.file('Oops!', 'Chỉnh sửa thất bại', 'err')
+            Swal.fire('Oops!', 'Chỉnh sửa thất bại', 'error');
         }
-    }
-
-    const handleUploadFile = async (e) => {
-        const imageBase64 = await fileToBase64(e.target.files[0])
-        setPayload(pre => ({
-            ...pre,
-            avatar: imageBase64
-        }))
-    }
+    };
 
     return (
         <div className="flex flex-col gap-10 bg-white p-7 w-full h-screen">
@@ -58,7 +67,7 @@ const EditAccount = () => {
                     <div className='flex mb-6 '>
                         <label className='w-48 flex-none' htmlFor="avatar">Ảnh đại diện</label>
                         <div>
-                            <img src={payload.avatar || anonavatar} alt="avatar" className='w-28 h-28 rounded-full border-collapse border-2 object-cover' />
+                            <img src={avatar || anonavatar} alt="avatar" className='w-28 h-28 rounded-full border-collapse border-2 object-cover' />
                             <input onChange={handleUploadFile} type="file" className="appearance-none my-4" id="avatar" />
                         </div>
                     </div>
@@ -69,8 +78,7 @@ const EditAccount = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-
-export default EditAccount
+export default withAvatarUpload(EditAccount);

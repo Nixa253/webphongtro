@@ -1,4 +1,3 @@
-// FavoriteList.js
 import React, { useEffect, useState } from 'react';
 import Item from '../../components/item';
 
@@ -25,6 +24,30 @@ const FavoriteList = () => {
 
       setFavoriteRooms(rooms);
     }
+  }, []);
+
+  // Sử dụng mẫu Observer để theo dõi thay đổi trong danh sách phòng yêu thích
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+      const rooms = favorites.map((postKey) => {
+        const [title, id] = postKey.split('_');
+        const roomInfo = JSON.parse(localStorage.getItem(postKey)) || {}; // Lấy thông tin từ localStorage
+
+        return {
+          id,
+          title,
+          ...roomInfo,
+        };
+      });
+      setFavoriteRooms(rooms);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (

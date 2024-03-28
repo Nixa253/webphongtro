@@ -145,14 +145,8 @@ const ManagePost = () => {
                                         />
                                     </td>
                                 </tr>
-
                             )
-
-
                         })}
-
-
-
                 </tbody>
             </table>
             {isEdit && <UpdatePost setIsEdit={setIsEdit} />}
